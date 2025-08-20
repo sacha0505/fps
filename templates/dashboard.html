@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Menu</title>
+    <style>
+        body {
+            background: #222;
+            color: #fff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+        }
+        header {
+            position: relative;
+            height: 100vh; /* hauteur de l’écran */
+            width: 100%;
+            overflow: hidden;
+        }
+        .header-content {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            color: #fff;
+            font-size: 1.5em;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+
+        .play-btn-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+
+            
+            
+        }
+        .play-btn {
+            background: #ffca28;
+            color: #222;
+            border: none;
+            display: flex;
+            padding: 20px 40px;
+            border-radius: 6px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background 0.2s;
+            
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            
+            
+        }
+        
+        .play-btn:hover {
+            background: #ffd54f;
+        }
+        
+
+        .welcome {
+            font-size: 1.2em;
+            color: #fff;
+        }
+
+        .settings-link {
+            color: #ffb300;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .settings-link:hover {
+            text-decoration: underline;
+        }
+
+
+        .settings-btn {
+            background: #0078d4;
+            color: #fff;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .settings-btn:hover {
+            background: #005fa3;
+        }
+        .avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 3px solid #fff;
+        }
+        .avatar-container {
+            margin-top: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .avatar-container img {      
+            width: 19%;
+            height: auto;
+            
+        }
+
+    </style>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <span class="welcome">Bienvenue, <strong>Utilisateur</strong></span>
+            <a href="settings.html" class="settings-link">Paramètres</a>
+        </div>
+        <div class="avatar-container">
+            <img src="C:\Users\Sacha\Desktop\New folder\disign\avatar.png" alt="Avatar" class="avatar-full">
+
+        </div>                
+    </header>
+    
+    <div class ="play-btn-container">
+        <div class="play-btn">
+            <button class="play-btn" onclick="window.location.href='jeux.html'">Jouer</button>
+        </div>
+    </div>
+</body>
+
+</html>
+
+
+
+
+
+
+

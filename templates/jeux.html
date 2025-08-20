@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<title>Jeu PvP </title>
+	<style>
+		body {
+			margin: 0;
+			background: #181818;
+			overflow: hidden;
+		}
+		.game-hud {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			pointer-events: none;
+		}
+		.player-info {
+			position: absolute;
+			top: 24px;
+			left: 32px;
+			background: rgba(30,30,30,0.8);
+			color: #fff;
+			padding: 12px 24px;
+			border-radius: 8px;
+			font-size: 1.1em;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+		}
+		.weapon-view {
+			position: absolute;
+			bottom: 0;
+			left: 50%;
+			transform: translateX(-50%) scale(1.1);
+			width: 420px;
+			height: 220px;
+			pointer-events: none;
+			z-index: 10;
+		}
+		.weapon-img {
+			width: 100%;
+			height: auto;
+			filter: drop-shadow(0 6px 16px #000a);
+		}
+		.crosshair {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 32px;
+			height: 32px;
+			transform: translate(-50%, -50%);
+			z-index: 20;
+		}
+		.crosshair:before, .crosshair:after {
+			content: '';
+			position: absolute;
+			background: #fff;
+		}
+		.crosshair:before {
+			left: 15px;
+			top: 0;
+			width: 2px;
+			height: 32px;
+		}
+		.crosshair:after {
+			top: 15px;
+			left: 0;
+			width: 32px;
+			height: 2px;
+		}
+
+		.map-ground {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			width: 700px;
+			height: 500px;
+			background: linear-gradient(to top, #6b4f2a 60%, #bfa76a 100%);
+			border-radius: 24px;
+			box-shadow: 0 8px 32px #000a;
+			z-index: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+	</style>
+</head>
+<body>
+    <div id="threejs-canvas" style="width:100vw; height:100vh; position:fixed; top:0; left:0; z-index:0;"></div>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+    <script>
+        let scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff);
+
+        let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+
+        let renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('threejs-canvas').appendChild(renderer.domElement);
+
+		// Sol
+	const groundGeo = new THREE.BoxGeometry(40, 0.5, 40);
+	const groundMat = new THREE.MeshPhongMaterial({color: 0xffff00});
+	const ground = new THREE.Mesh(groundGeo, groundMat);
+	ground.position.y = -1.5;
+	scene.add(ground);
+
+		// Joueur fictif (cube bleu)
+	const playerGeo = new THREE.BoxGeometry(1, 2, 1);
+	const playerMat = new THREE.MeshPhongMaterial({color: 0x2196f3});
+	const player = new THREE.Mesh(playerGeo, playerMat);
+	player.position.set(0, 1.1, 0);
+	scene.add(player);
+
+		// Lumière
+		const light = new THREE.DirectionalLight(0xffffff, 1.2);
+		light.position.set(10, 30, 10);
+		scene.add(light);
+		scene.add(new THREE.AmbientLight(0xcccccc));
+
+		// Contrôles souris (OrbitControls)
+		// Contrôle caméra souris (TPS/FPS basique)
+		let camAngleY = 0;
+		let camAngleX = 0.5;
+		window.addEventListener('mousemove', (e) => {
+			camAngleY -= e.movementX * 0.005;
+			camAngleX -= e.movementY * 0.005;
+			camAngleX = Math.max(0.1, Math.min(1.5, camAngleX));
+		});
+
+		// Contrôles clavier ZQSD
+		let move = {z:0, s:0, q:0, d:0};
+		window.addEventListener('keydown', function(e) {
+			if (e.code === 'KeyW') move.z = 1;
+			if (e.code === 'KeyS') move.s = 1;
+			if (e.code === 'KeyA') move.q = 1;
+			if (e.code === 'KeyD') move.d = 1;
+		});
+		window.addEventListener('keyup', function(e) {
+			if (e.code === 'KeyW') move.z = 0;
+			if (e.code === 'KeyS') move.s = 0;
+			if (e.code === 'KeyA') move.q = 0;
+			if (e.code === 'KeyD') move.d = 0;
+		});
+
+		function animate() {
+			requestAnimationFrame(animate);
+			// Déplacement fluide du joueur fictif selon la direction caméra
+			let speed = 0.2;
+			let dirY = camAngleY;
+			// Avancer/reculer
+			if (move.z) {
+				player.position.x -= Math.sin(dirY) * speed;
+				player.position.z -= Math.cos(dirY) * speed;
+			}
+			if (move.s) {
+				player.position.x += Math.sin(dirY) * speed;
+				player.position.z += Math.cos(dirY) * speed;
+			}
+			// Strafe gauche/droite
+			if (move.q) {
+				player.position.x -= Math.sin(dirY - Math.PI/2) * speed;
+				player.position.z -= Math.cos(dirY - Math.PI/2) * speed;
+			}
+			if (move.d) {
+				player.position.x -= Math.sin(dirY + Math.PI/2) * speed;
+				player.position.z -= Math.cos(dirY + Math.PI/2) * speed;
+			}
+			// Caméra suit et tourne autour du joueur
+			let radius = 8;
+			let px = player.position.x;
+			let py = player.position.y + 1;
+			let pz = player.position.z;
+			camera.position.x = px + radius * Math.sin(camAngleY) * Math.cos(camAngleX);
+			camera.position.y = py + radius * Math.sin(camAngleX);
+			camera.position.z = pz + radius * Math.cos(camAngleY) * Math.cos(camAngleX);
+			camera.lookAt(px, py, pz);
+			renderer.render(scene, camera);
+		}
+		animate();
+    </script>
+</body>
+</body>
+</html>

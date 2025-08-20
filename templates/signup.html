@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>S'inscrire</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .signup-container {
+            background: #fff;
+            padding: 30px 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 320px;
+        }
+        .signup-container h2 {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .signup-container label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .signup-container input[type="text"],
+        .signup-container input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .signup-container button {
+            width: 100%;
+            padding: 10px;
+            background: #0078d4;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .signup-container button:hover {
+            background: #005fa3;
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <h2>S'inscrire</h2>
+        <form>
+            <label for="identifiant">Identifiant</label>
+            <input type="text" id="identifiant" name="identifiant" required>
+
+            <label for="motdepasse">Mot de passe</label>
+            <input type="password" id="motdepasse" name="motdepasse" required>
+
+            <button type="submit">S'inscrire</button>
+
+            <!-- Lien vers la page de connexion -->
+            <p> Votre compte est créer : <a href="login.html">page de connexion</a> </p>
+        </form>
+    </div>
+</body>
+</html>
