@@ -88,100 +88,199 @@
 	</style>
 </head>
 <body>
+	<div class="crosshair"></div>
+
     <div id="threejs-canvas" style="width:100vw; height:100vh; position:fixed; top:0; left:0; z-index:0;"></div>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-    <script>
-        let scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xffffff);
+    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>	
+	<script>
+		let scene = new THREE.Scene();
+		scene.background = new THREE.Color(0x87ceeb);
 
-        let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-        camera.position.z = 5;
+		let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 
-        let renderer = new THREE.WebGLRenderer();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.getElementById('threejs-canvas').appendChild(renderer.domElement);
+		let renderer = new THREE.WebGLRenderer();
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		document.getElementById('threejs-canvas').appendChild(renderer.domElement);
 
 		// Sol
-	const groundGeo = new THREE.BoxGeometry(40, 0.5, 40);
-	const groundMat = new THREE.MeshPhongMaterial({color: 0xffff00});
-	const ground = new THREE.Mesh(groundGeo, groundMat);
-	ground.position.y = -1.5;
-	scene.add(ground);
+		//const groundGeo = new THREE.BoxGeometry(40, 0.5, 40);
+		//const groundMat = new THREE.MeshPhongMaterial({color: 0x228B22});
+		//const ground = new THREE.Mesh(groundGeo, groundMat);
+		//ground.position.y = -1.5;
+		//scene.add(ground);
 
-		// Joueur fictif (cube bleu)
-	const playerGeo = new THREE.BoxGeometry(1, 2, 1);
-	const playerMat = new THREE.MeshPhongMaterial({color: 0x2196f3});
-	const player = new THREE.Mesh(playerGeo, playerMat);
-	player.position.set(0, 1.1, 0);
-	scene.add(player);
+		// Joueur
+		const playerGeo = new THREE.BoxGeometry(1, 2, 1);
+		const playerMat = new THREE.MeshPhongMaterial({color: 0x2196f3, transparent: true, opacity: 0.2});
+		const player = new THREE.Mesh(playerGeo, playerMat);
+		player.position.set(0, 5, 0); // démarre un peu en hauteur pour tester la chute
+		scene.add(player);
 
-		// Lumière
+		// Lumières
 		const light = new THREE.DirectionalLight(0xffffff, 1.2);
 		light.position.set(10, 30, 10);
 		scene.add(light);
 		scene.add(new THREE.AmbientLight(0xcccccc));
 
-		// Contrôles souris (OrbitControls)
-		// Contrôle caméra souris (TPS/FPS basique)
-		let camAngleY = 0;
-		let camAngleX = 0.5;
+		// Variables FPS
+		let camYaw = 0;
+		let camPitch = 0;
+		let move = {w:0, s:0, a:0, d:0};
+		let clock = new THREE.Clock();
+
+		// Gravité
+		let velocityY = 0;
+		let gravity = -20;     // force de gravité
+		let jumpStrength = 8;  // force de saut
+		let onGround = false;
+
+		camera.position.set(player.position.x, player.position.y + 0.8, player.position.z);
+		
+		// Création du conteneur yaw (rotation gauche/droite)
+		let yawObject = new THREE.Object3D();
+		scene.add(yawObject);
+
+		// La caméra sera enfant de yawObject
+		yawObject.add(camera);
+
+		// Pitch (rotation haut/bas) appliqué directement sur la caméra
+		camera.position.set(0, 0.8, 0); // hauteur des yeux
+		yawObject.position.copy(player.position);
+
+		// Contrôles souris
 		window.addEventListener('mousemove', (e) => {
-			camAngleY -= e.movementX * 0.005;
-			camAngleX -= e.movementY * 0.005;
-			camAngleX = Math.max(0.1, Math.min(1.5, camAngleX));
+			camYaw -= e.movementX * 0.002;
+			camPitch -= e.movementY * 0.002;
+			camPitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, camPitch));
 		});
 
-		// Contrôles clavier ZQSD
-		let move = {z:0, s:0, q:0, d:0};
+		// Contrôles clavier
 		window.addEventListener('keydown', function(e) {
-			if (e.code === 'KeyW') move.z = 1;
+			if (e.code === 'KeyW') move.w = 1;
 			if (e.code === 'KeyS') move.s = 1;
-			if (e.code === 'KeyA') move.q = 1;
+			if (e.code === 'KeyA') move.a = 1;
 			if (e.code === 'KeyD') move.d = 1;
+			if (e.code === 'Space' && onGround) { // saut
+				velocityY = jumpStrength;
+				onGround = false;
+			}
 		});
 		window.addEventListener('keyup', function(e) {
-			if (e.code === 'KeyW') move.z = 0;
+			if (e.code === 'KeyW') move.w = 0;
 			if (e.code === 'KeyS') move.s = 0;
-			if (e.code === 'KeyA') move.q = 0;
+			if (e.code === 'KeyA') move.a = 0;
 			if (e.code === 'KeyD') move.d = 0;
+		});
+
+		// Tableau des obstacles
+		let obstacles = [];
+		// Exemple : plateforme
+
+		const platformGeo = new THREE.BoxGeometry(40, 0.5, 40);
+		const platformMat = new THREE.MeshPhongMaterial({color: 0x228B22});
+		const platform = new THREE.Mesh(platformGeo, platformMat);
+		platform.position.set(0, -1.5, 0);
+		scene.add(platform);
+		obstacles.push(platform);
+
+		// Exemple : mur
+		const wallGeo = new THREE.BoxGeometry(10, 3, 1);
+		const wallMat = new THREE.MeshPhongMaterial({color: 0x8B0000});
+		const wall = new THREE.Mesh(wallGeo, wallMat);
+		wall.position.set(0, 0.5, -5);
+		scene.add(wall);
+		obstacles.push(wall);
+
+		// Exemple : cube
+		const cubeGeo = new THREE.BoxGeometry(1, 1, 1);
+		const cubeMat = new THREE.MeshPhongMaterial({color: 0x8B4513});
+		const cube = new THREE.Mesh(cubeGeo, cubeMat);
+		cube.position.set(0, -0.5, 1);
+		scene.add(cube);
+		obstacles.push(cube);
+
+		// Fonction collision simple
+		function checkCollision(newPos) {
+			// Bounding box du joueur (2 de haut, 1 de large)
+			let playerBB = new THREE.Box3().setFromCenterAndSize(
+				new THREE.Vector3(newPos.x, newPos.y, newPos.z),
+				new THREE.Vector3(1, 2, 1)
+			);
+
+			let onPlatform = false;
+
+			for (let obj of obstacles) {
+				let objBB = new THREE.Box3().setFromObject(obj);
+
+				// --- Cas plateforme horizontale (marchable) ---
+				if (playerBB.intersectsBox(objBB)) {
+					let top = objBB.max.y;  // hauteur du dessus de l'obstacle
+					let feet = newPos.y - 1; // pieds du joueur (car 2 de haut)
+
+					// Si le joueur tombe sur l'objet (et pas de côté)
+					if (velocityY <= 0 && feet >= top - 0.2 && feet <= top + 0.5) {
+						// On pose le joueur dessus
+						player.position.y = top + 1; // +1 car joueur fait 2 de haut
+						velocityY = 0;
+						onGround = true;
+						onPlatform = true;
+					} else {
+						// Sinon, collision latérale classique
+						return true;
+					}
+				}
+			}
+
+			return onPlatform ? false : false; // false = pas bloqué si posé dessus
+		}
+
+
+
+
+
+		// FPS lock
+		window.addEventListener("click", () => {
+			renderer.domElement.requestPointerLock();
 		});
 
 		function animate() {
 			requestAnimationFrame(animate);
-			// Déplacement fluide du joueur fictif selon la direction caméra
-			let speed = 0.2;
-			let dirY = camAngleY;
-			// Avancer/reculer
-			if (move.z) {
-				player.position.x -= Math.sin(dirY) * speed;
-				player.position.z -= Math.cos(dirY) * speed;
+			let delta = clock.getDelta();
+			let speed = 5 * delta;
+
+			// Vecteurs de mouvement
+			let forward = new THREE.Vector3(Math.sin(camYaw), 0, Math.cos(camYaw));
+			let right = new THREE.Vector3(Math.sin(camYaw + Math.PI/2), 0, Math.cos(camYaw + Math.PI/2));
+
+			// Déplacements horizontaux
+			let newPos = player.position.clone();
+			if (move.w) newPos.addScaledVector(forward, -speed);
+			if (move.s) newPos.addScaledVector(forward, speed);
+			if (move.a) newPos.addScaledVector(right, -speed);
+			if (move.d) newPos.addScaledVector(right, speed);
+
+			if (!checkCollision(newPos)) {
+				player.position.copy(newPos);
 			}
-			if (move.s) {
-				player.position.x += Math.sin(dirY) * speed;
-				player.position.z += Math.cos(dirY) * speed;
-			}
-			// Strafe gauche/droite
-			if (move.q) {
-				player.position.x -= Math.sin(dirY - Math.PI/2) * speed;
-				player.position.z -= Math.cos(dirY - Math.PI/2) * speed;
-			}
-			if (move.d) {
-				player.position.x -= Math.sin(dirY + Math.PI/2) * speed;
-				player.position.z -= Math.cos(dirY + Math.PI/2) * speed;
-			}
-			// Caméra suit et tourne autour du joueur
-			let radius = 8;
-			let px = player.position.x;
-			let py = player.position.y + 1;
-			let pz = player.position.z;
-			camera.position.x = px + radius * Math.sin(camAngleY) * Math.cos(camAngleX);
-			camera.position.y = py + radius * Math.sin(camAngleX);
-			camera.position.z = pz + radius * Math.cos(camAngleY) * Math.cos(camAngleX);
-			camera.lookAt(px, py, pz);
+
+			// Gravité
+			velocityY += gravity * delta;
+			player.position.y += velocityY * delta;
+
+			// Collision verticale
+			checkCollision(player.position);
+
+			// Mise à jour de la caméra
+			yawObject.position.copy(player.position);
+			camera.rotation.x = camPitch;
+			yawObject.rotation.y = camYaw;
+
 			renderer.render(scene, camera);
-		}
-		animate();
-    </script>
-</body>
+			}
+
+			animate();
+	</script>
+
+
 </body>
 </html>
